@@ -1,0 +1,9 @@
+{
+  "name": "dashboard-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dashboard aggregation endpoint (routes + request wrapper module)",
+  "scripts": {
+    "test": "node --test"
+  }
+}

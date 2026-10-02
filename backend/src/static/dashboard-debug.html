@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>Dashboard Debug</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; background: #f6f7f9; }
+      h1 { font-size: 1.2rem; }
+      #banner {
+        display: none; padding: 0.6rem 1rem; margin-bottom: 1rem;
+        border: 1px solid #d97706; background: #fef3c7; color: #92400e;
+        border-radius: 6px; font-size: 0.9rem;
+      }
+      #cards { display: flex; gap: 1rem; flex-wrap: wrap; }
+      .card {
+        background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+        padding: 1rem 1.25rem; min-width: 160px;
+      }
+      .card h2 { font-size: 0.95rem; margin: 0 0 0.4rem; color: #374151; }
+      .card .count { font-size: 1.6rem; font-weight: 600; }
+      .card .share { color: #6b7280; font-size: 0.85rem; }
+      #meta { margin-top: 1rem; color: #9ca3af; font-size: 0.8rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Dashboard 调试页</h1>
+    <div id="banner"></div>
+    <div id="cards"></div>
+    <div id="meta"></div>
+    <noscript>需要启用 JavaScript。</noscript>
+
+    <script src="/static/js/dashboardClient.js"></script>
+    <script>
+      // Known sources mirror the backend config so an offline refresh can
+      // still report the full missing-source list.
+      var KNOWN_SOURCES = ['counter', 'localstack', 'tasks'];
+
+      var client = createDashboardClient({ knownSources: KNOWN_SOURCES });
+
+      function render(data) {
+        var banner = document.getElementById('banner');
+        var cardsEl = document.getElementById('cards');
+        var meta = document.getElementById('meta');
+        cardsEl.innerHTML = '';
+
+        var rendered = 0;
+        KNOWN_SOURCES.forEach(function (name) {
+          var card = data.cards && data.cards[name];
+          if (!card) return; // missing source: no card, listed in banner
+          rendered += 1;
+          var el = document.createElement('div');
+          el.className = 'card';
+          el.dataset.source = name;
+          var sharePct = (card.share * 100).toFixed(1);
+          el.innerHTML =
+            '<h2>' + name + '</h2>' +
+            '<div class="count">' + card.count + '</div>' +
+            '<div class="share">占比 ' + sharePct + '%</div>';
+          cardsEl.appendChild(el);
+        });
+
+        if (data.status === 'partial') {
+          var missing = data.missingSources || [];
+          banner.style.display = 'block';
+          banner.textContent =
+            '部分数据源不可用（' + missing.length + '）：' + missing.join(', ') +
+            ' — 已渲染 ' + rendered + ' 张卡片';
+          banner.dataset.missing = missing.join(',');
+        } else {
+          banner.style.display = 'none';
+        }
+
+        meta.textContent =
+          'status=' + data.status +
+          ' snapshot=' + (data.snapshotId || 'n/a') +
+          ' total=' + data.total +
+          (data.offline ? ' (offline 降级)' : '');
+      }
+
+      client.getDashboard().then(render).catch(function (err) {
+        // 401 already triggered logout+redirect; anything else degrades.
+        if (String(err && err.message) !== 'unauthorized') {
+          render({
+            status: 'partial',
+            snapshotId: null,
+            missingSources: KNOWN_SOURCES.slice(),
+            cards: {},
+            total: 0,
+            offline: true,
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1 @@
+[gateway] route=/api/dashboard status=partial snapshot=snap-1790914917704-365blbgf cache=miss missing=localstack
