@@ -1,0 +1,10 @@
+{
+  "name": "dashboard-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dashboard aggregation endpoint: thin route + auth, logic in the request-wrapper module",
+  "scripts": {
+    "test": "node --test",
+    "demo:partial": "node scripts/demo-partial.js"
+  }
+}
